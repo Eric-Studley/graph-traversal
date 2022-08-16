@@ -70,7 +70,6 @@
 ;;come up with a better name
 (defn dijkstra-loop
   [graph start end]
-  (println graph)
   (loop [costs (conj (priority-map) (assoc (zipmap (keys graph) (repeat inf)) start 0))
          current (int start)
          unvisited (disj (apply hash-set (keys graph)) start)
@@ -93,26 +92,52 @@
 
 (defn dijkstra
   [graph start end]
-  ;;(println graph)
   (let [costs (dijkstra-loop graph start end)
         traversals (into {} (filter #(not= (second %) inf)
                                     costs))]
-    (println costs)
-    (if-not (contains? traversals end)
-      (println "No Path between " start " and " end)
 
-      ;; (println (last (into [] (filter #(not= (second %) inf)
-      ;;                               costs)))
+
+    (if-not (contains? traversals end)
+      (assoc {} :path () :total-distance (get traversals end))
       (assoc {} :path (keys traversals)
-             :total-distance (get (into {} (filter #(not= (second %) inf)
-                                                   costs)) end))
-    ;;  (println (last (into {} (filter #(not= (second %) inf)
-                                    ;;  costs)))))
-      )))
+             :total-distance (get traversals end)))))
+
 
 (def g (make-graph 10 20))
-(dijkstra g 1 10)
+(dijkstra g 1 8)
 
+(defn get-max
+  [m]
+  (map (fn [[k v]]
+         (max-key map k) :total-distance))
+                                   (dissoc graph s)))))
+
+(defn get-eccentricity
+  [graph s]
+  (assoc (sorted-map) s (into []
+                              (map (fn [[k v]]
+                                     (get (dijkstra graph s k) :total-distance))
+                                   (dissoc graph s)))))
+(defn eccentricity
+  [g s]
+  (apply max (remove nil? (get (get-eccentricity g s) s))))
+
+(defn get-radius
+  [graph]
+  (into {} (map (fn [[k v]]
+                  (get-eccentricity graph k)) graph)))
+(defn radius
+  [graph]
+  (apply min (into [] (map (fn [[k v]]
+                  (apply max (remove nil? (get (get-radius g) k)))) graph))))
+
+
+(dijkstra g 7 3)
+(eccentricity g 1)
+(radius g)
+
+(remove nil? (get  (radius g) 1))
+(apply max (remove nil? (get (radius g) 1)))
 
 (defn -main
 
