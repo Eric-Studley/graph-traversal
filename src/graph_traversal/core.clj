@@ -43,6 +43,16 @@
 (def ^:private inf (Integer/MAX_VALUE))
 (require '[clojure.data.priority-map :refer [priority-map]])
 
+(defn neighbors
+  "Returns n's neighbors, optionally filtered if unvisited"
+  ([g n] (get g n {}))
+  ([g n uv] (select-keys (neighbors g n) uv)))
+
+(defn update-children
+  [graph current unvisited children]
+  (merge children
+         (conj children (zipmap (keys (neighbors graph current unvisited)) (repeat current)))))
+
 ;;somehow update the tentative cost of all the neighbours
 (defn update-costs
   [graph costs unvisited curr]
@@ -53,33 +63,56 @@
          (update-in c [nbr] min (+ curr-cost nbr-cost))
          c))
      costs
-     (get graph curr))))
+     (neighbors graph curr unvisited))))
 
-(defn dijkstra
+
+(use 'clojure.data)
+;;come up with a better name
+(defn dijkstra-loop
   [graph start end]
+  (println graph)
   (loop [costs (conj (priority-map) (assoc (zipmap (keys graph) (repeat inf)) start 0))
          current (int start)
          unvisited (disj (apply hash-set (keys graph)) start)
-         visitied [start]]
+         visitied [start]
+         path (assoc (zipmap (keys graph) (repeat 0)) start 0)]
+
     (if (= current end)
       costs
-      (let [updated-costs (update-costs graph costs unvisited current)
-            nextnode (key (first (apply dissoc updated-costs visitied)))]
+      (let [new-costs (update-costs graph costs unvisited current)
+            nextnode (key (first (apply dissoc new-costs visitied)))
+            [x y z] (diff new-costs costs)
+            children (zipmap (keys x) (repeat current))]
         (recur
-         (conj (priority-map) updated-costs)
+         (conj (priority-map) new-costs)
          (int nextnode)
          (disj unvisited current)
-         (conj visitied nextnode))))))
+         (conj visitied nextnode)
+         (merge path children))))))
 
 
+(defn dijkstra
+  [graph start end]
+  ;;(println graph)
+  (let [costs (dijkstra-loop graph start end)
+        traversals (into {} (filter #(not= (second %) inf)
+                                    costs))]
+    (println costs)
+    (if-not (contains? traversals end)
+      (println "No Path between " start " and " end)
 
-(dijkstra (make-graph 10 20) 1 3)
+      ;; (println (last (into [] (filter #(not= (second %) inf)
+      ;;                               costs)))
+      (assoc {} :path (keys traversals)
+             :total-distance (get (into {} (filter #(not= (second %) inf)
+                                                   costs)) end))
+    ;;  (println (last (into {} (filter #(not= (second %) inf)
+                                    ;;  costs)))))
+      )))
 
-(def mapw {:a 1 :b 4 :c 3})
-(println mapw)
-(keys {:keys :and, :some :values})
-(def xxx (conj (priority-map) mapw))
-(apply dissoc xxx #{:a})
+(def g (make-graph 10 20))
+(dijkstra g 1 10)
+
 
 (defn -main
 
