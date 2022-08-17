@@ -45,12 +45,12 @@
                  (add-random-edge g)))))))
 
 
-(defn neighbors
+(defn neighbours
   ([g n] (get g n {}))
-  ([g n uv] (select-keys (neighbors g n) uv)))
+  ([g n uv] (select-keys (neighbours g n) uv)))
 
 
-;;somehow update the tentative cost of all the neighbours
+;;Update the cost of neighbours and keep track of parent nodes to backtrack path 
 (defn update-costs
   [graph costs unvisited curr children]
   (let [curr-cost (get costs curr)]
@@ -60,7 +60,7 @@
          [(update-in c [nbr] min (+ curr-cost nbr-cost)) (assoc cx nbr curr)]
          [c cx]))
      [costs children]
-     (neighbors graph curr unvisited))))
+     (neighbours graph curr unvisited))))
 
 
 
