@@ -105,7 +105,7 @@
 
 (defn get-eccentricity
   [graph s]
-  (assoc (sorted-map) s (into []
+  (assoc (sorted-map) s (into ()
                               (map (fn [[k v]]
                                      (get (dijkstra graph s k) :total-distance))
                                    (dissoc graph s)))))
@@ -114,29 +114,24 @@
   [g s]
   (apply max (remove nil? (get (get-eccentricity g s) s))))
 
-
 (defn get-distances
-  [graph]
-  (into {} (map (fn [[k v]]
-                  (get-eccentricity graph k)) graph)))
+  [graph f]
+  (f (sort (remove nil? (flatten  (map (fn [[k v]]
+                                         (get (get-eccentricity graph k) k)) graph))))))
 (defn radius
   [graph]
-  (apply min (into [] (map (fn [[k v]]
-                             (apply min (remove nil? (get (get-distances graph) k)))) graph))))
+  (get-distances graph first))
 (defn diameter
   [graph]
-  (apply max (into [] (map (fn [[k v]]
-                             (apply max (remove nil? (get (get-distances graph) k)))) graph))))
+  (get-distances graph last))
 
 (def random-graph (make-graph 10 10))
 (dijkstra random-graph 1 10)
 (eccentricity random-graph (first (keys random-graph)))
-(get-distances random-graph)
 (radius random-graph)
 (diameter random-graph)
 
 (defn -main
-
 
   [& args]
 
