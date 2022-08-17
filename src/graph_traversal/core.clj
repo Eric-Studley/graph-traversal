@@ -1,10 +1,15 @@
 (ns graph-traversal.core
   (:gen-class))
 
+
+(def ^:private inf (Integer/MAX_VALUE))
+(require '[clojure.data.priority-map :refer [priority-map]])
+
 (defn create-nodes [n]
   (into [] (range 1 (+ 1 n))))
 
 ;;Should I change this (and all the other ones to a reduction function rather than a loop?)
+;;Creates a spanning tree to ensure the graph is connected
 (defn create-connected-graph
   [nodes]
   (let [start-node (rand-nth nodes)]
@@ -17,9 +22,8 @@
            (conj explored rand)
            (remove #{rand} remaining)
            (into graph (assoc {} v (assoc {} rand (+ (rand-int 9) 1))))))))))
-           ;;(into graph {v {rand (+ (rand-int 9) 1)}})))))))
 
-(assoc {} (keyword (str 1))  (assoc {} (rand-int 9) (+ (rand-int 9) 1)))
+
 
 ;;I think this is bugged and sometimes it produces a few less edge than its supposed to havent figured out why yet
 (defn add-random-edge
@@ -40,18 +44,12 @@
           (recur (dec count)
                  (add-random-edge g)))))))
 
-(def ^:private inf (Integer/MAX_VALUE))
-(require '[clojure.data.priority-map :refer [priority-map]])
 
 (defn neighbors
   "Returns n's neighbors, optionally filtered if unvisited"
   ([g n] (get g n {}))
   ([g n uv] (select-keys (neighbors g n) uv)))
 
-(defn update-children
-  [graph current unvisited children]
-  (merge children
-         (conj children (zipmap (keys (neighbors graph current unvisited)) (repeat current)))))
 
 ;;somehow update the tentative cost of all the neighbours
 (defn update-costs
@@ -66,28 +64,24 @@
      (neighbors graph curr unvisited))))
 
 
-(use 'clojure.data)
+
 ;;come up with a better name
 (defn dijkstra-loop
   [graph start end]
   (loop [costs (conj (priority-map) (assoc (zipmap (keys graph) (repeat inf)) start 0))
          current (int start)
          unvisited (disj (apply hash-set (keys graph)) start)
-         visitied [start]
-         path (assoc (zipmap (keys graph) (repeat 0)) start 0)]
+         visitied [start]]
 
     (if (= current end)
       costs
       (let [new-costs (update-costs graph costs unvisited current)
-            nextnode (key (first (apply dissoc new-costs visitied)))
-            [x y z] (diff new-costs costs)
-            children (zipmap (keys x) (repeat current))]
+            nextnode (key (first (apply dissoc new-costs visitied)))]
         (recur
          (conj (priority-map) new-costs)
          (int nextnode)
          (disj unvisited current)
-         (conj visitied nextnode)
-         (merge path children))))))
+         (conj visitied nextnode))))))
 
 
 (defn dijkstra
@@ -95,22 +89,10 @@
   (let [costs (dijkstra-loop graph start end)
         traversals (into {} (filter #(not= (second %) inf)
                                     costs))]
-
-
     (if-not (contains? traversals end)
       (assoc {} :path () :total-distance (get traversals end))
       (assoc {} :path (keys traversals)
              :total-distance (get traversals end)))))
-
-
-(def g (make-graph 10 20))
-(dijkstra g 1 8)
-
-(defn get-max
-  [m]
-  (map (fn [[k v]]
-         (max-key map k) :total-distance))
-                                   (dissoc graph s)))))
 
 (defn get-eccentricity
   [graph s]
@@ -118,30 +100,33 @@
                               (map (fn [[k v]]
                                      (get (dijkstra graph s k) :total-distance))
                                    (dissoc graph s)))))
+
 (defn eccentricity
   [g s]
   (apply max (remove nil? (get (get-eccentricity g s) s))))
 
-(defn get-radius
+
+(defn get-stats
   [graph]
   (into {} (map (fn [[k v]]
                   (get-eccentricity graph k)) graph)))
 (defn radius
   [graph]
   (apply min (into [] (map (fn [[k v]]
-                  (apply max (remove nil? (get (get-radius g) k)))) graph))))
+                             (apply min (remove nil? (get (get-stats graph) k)))) graph))))
+(defn diameter
+  [graph]
+  (apply max (into [] (map (fn [[k v]]
+                             (apply max (remove nil? (get (get-stats graph) k)))) graph))))
 
-
-(dijkstra g 7 3)
-(eccentricity g 1)
-(radius g)
-
-(remove nil? (get  (radius g) 1))
-(apply max (remove nil? (get (radius g) 1)))
+;; (dijkstra random-graph 7 3)
+;; (eccentricity random-graph (first (keys random-graph)))
+;; (get-stats random-graph)
+;; (radius random-graph)
+;; (diameter random-graph)
 
 (defn -main
 
-  "I don't do a whole lot ... yet."
 
   [& args]
 
