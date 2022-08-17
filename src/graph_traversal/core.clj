@@ -30,7 +30,7 @@
   "Add a random edge to a specified graph"
   [graph]
   (let [key (rand-nth (keys graph))]
-    (assoc-in graph [key] (conj (get-in graph [key]) (assoc {} (+ (rand-int 9) 1) (+ (rand-int 9) 1))))))
+    (assoc-in graph [key] (conj (get-in graph [key]) (assoc {} (rand-nth (keys (dissoc graph key))) (+ (rand-int 9) 1))))))
 
 (defn make-graph [n s]
   (cond
@@ -46,21 +46,20 @@
 
 
 (defn neighbors
-  "Returns n's neighbors, optionally filtered if unvisited"
   ([g n] (get g n {}))
   ([g n uv] (select-keys (neighbors g n) uv)))
 
 
 ;;somehow update the tentative cost of all the neighbours
 (defn update-costs
-  [graph costs unvisited curr]
+  [graph costs unvisited curr children]
   (let [curr-cost (get costs curr)]
     (reduce-kv
-     (fn [c nbr nbr-cost]
+     (fn [[c cx] nbr nbr-cost]
        (if (unvisited nbr)
-         (update-in c [nbr] min (+ curr-cost nbr-cost))
-         c))
-     costs
+         [(update-in c [nbr] min (+ curr-cost nbr-cost)) (assoc cx nbr curr)]
+         [c cx]))
+     [costs children]
      (neighbors graph curr unvisited))))
 
 
@@ -71,27 +70,37 @@
   (loop [costs (conj (priority-map) (assoc (zipmap (keys graph) (repeat inf)) start 0))
          current (int start)
          unvisited (disj (apply hash-set (keys graph)) start)
-         visitied [start]]
-
+         visitied [start]
+         path (assoc (zipmap (keys graph) (repeat 0)) start 0)]
     (if (= current end)
-      costs
-      (let [new-costs (update-costs graph costs unvisited current)
+      [costs path]
+      (let [[new-costs children] (update-costs graph costs unvisited current path)
             nextnode (key (first (apply dissoc new-costs visitied)))]
         (recur
          (conj (priority-map) new-costs)
          (int nextnode)
          (disj unvisited current)
-         (conj visitied nextnode))))))
+         (conj visitied nextnode)
+         children)))))
+
+(defn get-path
+  [nodes end]
+  (loop [currentNode (get nodes end) path (list end)]
+    (if (= currentNode 0)
+      path
+      (recur
+       (get nodes currentNode)
+       (conj path currentNode)))))
 
 
 (defn dijkstra
   [graph start end]
-  (let [costs (dijkstra-loop graph start end)
-        traversals (into {} (filter #(not= (second %) inf)
-                                    costs))]
+  (let [[costs nodes] (dijkstra-loop graph start end)
+        traversals (into (priority-map) (filter #(not= (second %) inf)
+                                                costs))]
     (if-not (contains? traversals end)
       (assoc {} :path () :total-distance (get traversals end))
-      (assoc {} :path (keys traversals)
+      (assoc {} :path (get-path nodes end)
              :total-distance (get traversals end)))))
 
 (defn get-eccentricity
@@ -119,12 +128,12 @@
   (apply max (into [] (map (fn [[k v]]
                              (apply max (remove nil? (get (get-distances graph) k)))) graph))))
 
-;; (def random-graph (make-graph 10 20))
-;; (dijkstra random-graph 7 3)
-;; (eccentricity random-graph (first (keys random-graph)))
-;; (get-stats random-graph)
-;; (radius random-graph)
-;; (diameter random-graph)
+(def random-graph (make-graph 10 10))
+(dijkstra random-graph 1 10)
+(eccentricity random-graph (first (keys random-graph)))
+(get-distances random-graph)
+(radius random-graph)
+(diameter random-graph)
 
 (defn -main
 
