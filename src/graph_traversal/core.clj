@@ -106,19 +106,20 @@
   (apply max (remove nil? (get (get-eccentricity g s) s))))
 
 
-(defn get-stats
+(defn get-distances
   [graph]
   (into {} (map (fn [[k v]]
                   (get-eccentricity graph k)) graph)))
 (defn radius
   [graph]
   (apply min (into [] (map (fn [[k v]]
-                             (apply min (remove nil? (get (get-stats graph) k)))) graph))))
+                             (apply min (remove nil? (get (get-distances graph) k)))) graph))))
 (defn diameter
   [graph]
   (apply max (into [] (map (fn [[k v]]
-                             (apply max (remove nil? (get (get-stats graph) k)))) graph))))
+                             (apply max (remove nil? (get (get-distances graph) k)))) graph))))
 
+;; (def random-graph (make-graph 10 20))
 ;; (dijkstra random-graph 7 3)
 ;; (eccentricity random-graph (first (keys random-graph)))
 ;; (get-stats random-graph)
