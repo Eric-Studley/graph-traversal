@@ -1,44 +1,24 @@
-# graph-traversal
+Eric Studley
 
-FIXME: description
+Coding challenge for Audience republic 
 
-## Installation
 
-Download from http://example.com/FIXME.
 
-## Usage
+Lein repl and the following commands should be enough to verify everything works.
 
-FIXME: explanation
+(def random-graph (make-graph 10 10))
+(dijkstra random-graph 1 10)
+(eccentricity random-graph (first (keys random-graph)))
+(radius random-graph)
+(diameter random-graph)
 
-    $ java -jar graph-traversal-0.1.0-standalone.jar [args]
 
-## Options
 
-FIXME: listing of options this app accepts.
+Notes:
+Even though I have never touched clojure or any functional programming language before ill admit this took me a really long time. ~3-4 hours a day for 7 days. Although a lot of that was reading on braveclojure.com. It took me a very long time to stop thinking in terms of OOP and in the end I'm not overly happy with the result.
 
-## Examples
+The code does work and you get the right ouputs but Im positive the code could be improved dramaticaly with more in depth knowledge of clojure. 
 
-...
+I was going to add tests but after a week I feel like my time is up.
 
-### Bugs
-
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
-
-## License
-
-Copyright © 2022 FIXME
-
-This program and the accompanying materials are made available under the
-terms of the Eclipse Public License 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0.
-
-This Source Code may also be made available under the following Secondary
-Licenses when the conditions for such availability set forth in the Eclipse
-Public License, v. 2.0 are satisfied: GNU General Public License as published by
-the Free Software Foundation, either version 2 of the License, or (at your
-option) any later version, with the GNU Classpath Exception which is available
-at https://www.gnu.org/software/classpath/license.html.
+I do plan to come back to this in the future and improve upon it once I understand more.
